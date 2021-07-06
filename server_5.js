@@ -6,7 +6,7 @@ const clientsData = new Map();
 
 //функция полидайс
 function polydice(dice,diceNumber){
-	let rolls='';
+	let rolls="";
 	for(let i = 1; i <= diceNumber; i++){
 		rolls = rolls + '|' + Math.round(Math.random() * (dice - 1) + 1);
 	}	
@@ -17,45 +17,62 @@ wss.on('connection', ws => {
 	clients.add(ws);
 	wss.clients.forEach(function each(client) {
 		client.send('new client added. ' + wss.clients.size + ' active connections');
-		//client.send(ws);
 	});	
 		
 	ws.on('message', message => {
-		let answer;
-		//answer возвращает исходное сообщение, добавляя к нему результаты бросков через '|'
-		//например: dice|23452|Icy|20|2|15|18
-		let messageArr = message.split('|'); 
-		clientsData.set(ws,messageArr[1]);
+		//возможные варианты message
+		/*1. section=dices|gamername=Icy|gamercolor=red|targetname=(d20,d10 etc.)/skill name/save name etc.
+		|dice=20,10 etc.|dicecount=3(how many rolls)|dicebonus=addition to roll( 15, -3 etc.)|special=hp/stats/skill (any addition info)|special2 = in reserve */
+		/*2. section=map
+		тут будет разбор сообщения от карты*/
 		
-		if (messageArr[0] == 'dice'){
-			//бросок с полидайса; message состоит из запрашиваемой функции, айди игры, имени игрока, типа кубика, кол-ва бросков
-			//например: dice|23452|Icy|20|2			
-			answer = message + polydice(messageArr[3],messageArr[4]);
+		let answer;
+		let inputMessage = new Map();
+		
+		//разбиваем входящую строку до коллекции ключ/значение
+		let messageArr = message.split('|'); 
+		messageArr.forEach((item) => {
+			let newArr = item.split('=');
+			inputMessage.set(newArr[0],newArr[1]);
+		});
+		
+		clientsData.set(ws,inputMessage.get('gamername'));
+		
+		if (inputMessage.get('section') == 'dices'){
+			//бросок 
+			/*например: 
+				inputMessage:
+					"section"="dices"
+					"gamername"="Icy"
+					"gamercolor"="red"
+					"targetname"="d8"
+					"dice"="8"
+					"dicecount"="3"
+					"dicebonus"="0"
+					"special"="hp"
+					"special2"=""
+			*/
+			
+			//формирование ответа
+			let answer;
+			
+			if (inputMessage.get('special2') == ''){
+				if (inputMessage.get('special') == 'hp'){
+					answer = message + polydice(Number(inputMessage.get('dice')),Number(inputMessage.get('dicecount'))*2);
+				} else if (inputMessage.get('special') == 'stats'){
+					answer = message + polydice(Number(inputMessage.get('dice')),Number(inputMessage.get('dicecount'))*4);
+				} else {
+					answer = message + polydice(Number(inputMessage.get('dice')),Number(inputMessage.get('dicecount')));
+				}
+			}
+			
+			
 			wss.clients.forEach(function each(client) {
 				if (clientsData.get(ws) == clientsData.get(client)){
 					client.send(answer);
 				}
 			});			
-		} else if (messageArr[0] == 'dicehp'){
-			//бросок с полидайса на наброску хп;
-			//message состоит из запрашиваемой функции, айди игры, имени игрока, типа кубика, кол-ва бросков
-			//например: dicehp|23452|Icy|12|4			
-			answer = message + polydice(messageArr[3],messageArr[4]*2);
-			wss.clients.forEach(function each(client) {
-				if (clientsData.get(ws) == clientsData.get(client)){
-					client.send(answer);
-				}
-			});				
-		} else if (messageArr[0] == 'skill'){
-			//бросок скила; message состоит из запрашиваемой функции, айди игры, имени игрока, названия скила, бонуса скила
-			//например: skill|23452|Icy|Decipher Script|18
-			answer = message + polydice(20,1);
-			wss.clients.forEach(function each(client) {
-				if (clientsData.get(ws) == clientsData.get(client)){
-					client.send(answer);
-				}
-			});				
-		}
+		} 
 	});
 	
 	
