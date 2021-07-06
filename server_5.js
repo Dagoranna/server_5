@@ -43,9 +43,10 @@ wss.on('connection', ws => {
 		if (inputMessage.get('section') == 'system'){
 			answer = message + '|server awaken';
 			wss.clients.forEach(function each(client) {
-				if (clientsData.get(ws) == clientsData.get(client)){
+				/*if (clientsData.get(ws) == clientsData.get(client)){
 					client.send(answer);
-				}
+				}*/
+				client.send(answer);
 			});				
 		} else if (inputMessage.get('section') == 'dices'){			
 			//бросок 
@@ -77,9 +78,10 @@ wss.on('connection', ws => {
 			
 			
 			wss.clients.forEach(function each(client) {
-				if (clientsData.get(ws) == clientsData.get(client)){
+				/*if (clientsData.get(ws) == clientsData.get(client)){
 					client.send(answer);
-				}
+				}*/
+				client.send(answer);
 			});			
 		} 
 	});
