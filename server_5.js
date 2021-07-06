@@ -25,6 +25,8 @@ wss.on('connection', ws => {
 		|dice=20,10 etc.|dicecount=3(how many rolls)|dicebonus=addition to roll( 15, -3 etc.)|special=hp/stats/skill (any addition info)|special2 = in reserve */
 		/*2. section=map
 		тут будет разбор сообщения от карты*/
+		/*3. section=system
+		просто будим сервер*/
 		
 		let answer;
 		let inputMessage = new Map();
@@ -38,7 +40,14 @@ wss.on('connection', ws => {
 		
 		clientsData.set(ws,inputMessage.get('gamername'));
 		
-		if (inputMessage.get('section') == 'dices'){
+		if (inputMessage.get('section') == 'system'){
+			answer = message + '|server awaken';
+			wss.clients.forEach(function each(client) {
+				if (clientsData.get(ws) == clientsData.get(client)){
+					client.send(answer);
+				}
+			});				
+		} else if (inputMessage.get('section') == 'dices'){			
 			//бросок 
 			/*например: 
 				inputMessage:
