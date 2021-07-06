@@ -92,6 +92,6 @@ wss.on('connection', ws => {
 		});			
 	});	
 	
-	ws.send('server_awakened');
+	//ws.send('server_awakened');
 })
 
